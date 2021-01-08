@@ -8,3 +8,4 @@ Stare 20 meters away every 20 minutes for 20 seconds
 
 * Make it even fancier by implementing the letter rain using OpenGL
 * Create a more robust installer; it currently assumes you are on Linux and that if it finds Python3 it will be a version that works
+* Make the installer is idempotent. I.e., nothing good will come from currently running it multiple times
