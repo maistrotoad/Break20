@@ -12,7 +12,7 @@ from PyQt5.QtGui import QColor, QFont, QPainter, QPen
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import QEvent, QPoint, QPropertyAnimation, QRect
 
-includeRanges = [
+includeRanges = (
     (0x0021, 0x0021),
     (0x0023, 0x0026),
     (0x0028, 0x007E),
@@ -26,7 +26,7 @@ includeRanges = [
     (0x037A, 0x037E),
     (0x0384, 0x038A),
     (0x038C, 0x038C),
-]
+)
 
 alphabet = [
     chr(codePoint)
