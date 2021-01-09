@@ -15,16 +15,16 @@ chrRanges = (
     (36, 38),
     (42, 44),
     (48, 91),
-    (97, 123),
     (161, 172),
-    (174, 452),
-    (461, 497),
-    (500, 680),
-    (931, 1000),
-    (1200, 1328),
-    (1330, 1367),
+    (174, 224),
+    (256, 306, 2),
+    (412, 414),
+    (415, 417),
+    (1200, 1208, 2),
+    (1217, 1229, 2),
+    (1329, 1367),
     (1378, 1416),
-)  # ,(11360,11391),(5792,5872),(880,887),(890,894),(900,906),(908,908))
+)
 
 alphabet = [chr(n) for chrRange in chrRanges for n in range(*chrRange)]
 
@@ -33,12 +33,6 @@ alphabetRange = range(len(alphabet))
 
 def randLetter():
     return choice(alphabetRange)
-
-
-def getLayer(width, height):
-    chars = [randLetter() for _ in range(randint(5, 13))]
-
-    return {"chars": chars, "x": random() * width, "y": height}
 
 
 class GlWidget(QtWidgets.QOpenGLWidget):
@@ -50,36 +44,59 @@ class GlWidget(QtWidgets.QOpenGLWidget):
         self.xPos = 10
         self.yPos = self.height() - 10
 
-        self.topLayers = [getLayer(self.width(), self.height()) for _ in range(20)]
+        self.topLayers = [self.getLayer()]
+        self.maxLayers = 200
+
+    def getLayer(self):
+        chars = [randLetter() for _ in range(randint(5, 13))]
+
+        x = random() * self.width()
+        y = self.height() + 13 * 32 + random() * 50
+
+        return {"chars": chars, "x": x, "y": y, "speed": random() * 2 + 2}
 
     def paintGL(self):
         gl.glClearColor(*transparent)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-
         gl.glBindTexture(gl.GL_TEXTURE_2D, self.textureId)
+
+        numLayers = len(self.topLayers)
+        if numLayers < self.maxLayers:
+            addLayer = (self.maxLayers - numLayers) / self.maxLayers
+            if random() > 0.6 + addLayer * 0.4:
+                self.topLayers.append(self.getLayer())
 
         for layer in self.topLayers:
             gl.glPushMatrix()
             gl.glTranslate(layer["x"], layer["y"], 0)
             gl.glPushMatrix()
             gl.glListBase(self.base)
-            green = (0, 0.5, 0, 0.5)
-            gl.glColor(*green)
-            gl.glCallLists(layer["chars"][2:])
-            wobble = random() * 0.7
-            brightGreen = (wobble, 1, wobble, 0.5)
+
+            firstChars = layer["chars"][1:]
+            for i, char in enumerate(firstChars):
+                percent = i / len(firstChars)
+                green = (percent * 0.7, 0.8, percent * 0.7, percent)
+                gl.glColor(*green)
+                gl.glCallLists(char)
+
+            wobble = random() * 0.5
+            brightGreen = (0.4 + wobble, 1, 0.4 + wobble, 1)
             gl.glColor(*brightGreen)
             if layer["chars"][1] == 0 and random() > 0.7:
                 layer["chars"][1] = randLetter()
             elif random() > 0.99:
                 layer["chars"][1] = 0 if random() > 0.1 else randLetter()
+            gl.glCallLists(layer["chars"][1])
 
-            gl.glCallLists(layer["chars"][:2])
             gl.glPopMatrix()
             gl.glPopMatrix()
-            layer["y"] = layer["y"] - 0.5
+            layer["y"] = layer["y"] - layer["speed"]
 
-            self.update()
+            if layer["y"] < 0:
+                layer = self.getLayer()
+
+        self.topLayers = [(layer if layer["y"] > 0 else self.getLayer()) for layer in self.topLayers]
+        self.update()
 
     def initializeGL(self):
         gl.glTexEnvf(gl.GL_TEXTURE_ENV, gl.GL_TEXTURE_ENV_MODE, gl.GL_MODULATE)
@@ -99,8 +116,8 @@ class GlWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
 
-    def makefont(self, filename=f"{Path(__file__).parent}/EversonMono.ttf", size=32):
-        # Load font  and check it is monotype
+    def makefont(self, filename=f"{Path(__file__).parent}/FreeSerif.ttf", size=32):
+        # Load font
         face = ft.Face(filename)
         face.set_char_size(size * 64)
 
@@ -115,8 +132,8 @@ class GlWidget(QtWidgets.QOpenGLWidget):
         height = ascender + descender
 
         # Generate texture data
-        matrixRows = 23
-        matrixColumns = 37
+        matrixRows = 14
+        matrixColumns = 16
         Z = np.zeros((height * matrixRows, width * matrixColumns), dtype=np.ubyte)
         for row in range(matrixRows):
             for i in range(matrixColumns):
@@ -160,7 +177,7 @@ class GlWidget(QtWidgets.QOpenGLWidget):
             gl.glTexCoord2f((x + 1) * dx, (y) * dy), gl.glVertex(width, 0)
             gl.glTexCoord2f((x + 1) * dx, (y + 1) * dy), gl.glVertex(width, -height)
             gl.glEnd()
-            gl.glTranslatef(0, -height, 0)
+            gl.glTranslatef(0, -0.8 * height, 0)
             gl.glEndList()
 
 
