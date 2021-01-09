@@ -13,11 +13,14 @@ from PyQt5.QtCore import QEvent, QPropertyAnimation, Qt, pyqtProperty
 
 
 class MainText(QWidget):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent, geometry):
+        QWidget.__init__(self, parent)
+        self.setGeometry(geometry)
         self._fontOpacity = 255
 
         self.mainText = "Stare out of the window for the next 20 seconds..."
+
+        self.anim()
 
     def paintEvent(self, e: QEvent):
         qp = QPainter()
@@ -28,7 +31,7 @@ class MainText(QWidget):
 
     def render(self, qp: QPainter):
         mainFont = QFont()
-        mainFont.setPixelSize(32)
+        mainFont.setPixelSize(48)
 
         mainPen = QPen(QColor(0, 200, 0, self.fontOpacity), 2, Qt.SolidLine)
 

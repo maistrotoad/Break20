@@ -7,31 +7,19 @@
 
 import sys
 
-from PyQt5.QtGui import QSurfaceFormat
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtCore import QEvent, QRect, Qt
 
 from mainText import MainText
-from matrix import Matrix
+from matrixGl import MatrixGl
 
 
 class Break20(QWidget):
     def __init__(self, screenGeometry: QRect):
         super().__init__()
 
-        surfaceFormat = QSurfaceFormat()
-        surfaceFormat.setSamples(4)
-
-        mainText = MainText()
-        mainText.setParent(self)
-        mainText.setGeometry(screenGeometry)
-        mainText.anim()
-
-        matrices = [Matrix(screenGeometry=screenGeometry) for _ in range(50)]
-
-        for matrix in matrices:
-            matrix.setParent(self)
-            matrix.anim()
+        MatrixGl(self, screenGeometry)
+        MainText(self, screenGeometry)
 
         self.setStyleSheet("background:transparent")
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -44,8 +32,6 @@ class Break20(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
     screen = app.primaryScreen()
-
     window = Break20(screenGeometry=screen.geometry())
     sys.exit(app.exec_())
