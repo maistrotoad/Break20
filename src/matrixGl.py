@@ -42,71 +42,105 @@ class MatrixGl(QtWidgets.QOpenGLWidget):
         self.setGeometry(geometry)
         self.topFont = {"base": 0, "textureId": 0}
         self.bottomFont = {"base": 0, "textureId": 0}
-        self.xPos = 10
-        self.yPos = self.height() - 10
 
-        self.topLayers = [self.getTopLayer()]
         self.maxTopLayers = 50
-        self.bottomLayers = [self.getTopLayer()]
+        self.topX = np.zeros(self.maxTopLayers)
+        self.topY = np.zeros(self.maxTopLayers)
+        self.topSpeed = np.zeros(self.maxTopLayers)
+        self.topChars = [[] for _ in range(self.maxTopLayers)]
+
+        self.topEnabled = 1
+        i = self.topEnabled - 1
+        self.topX[i] = random() * self.width()
+        self.topY[i] = self.height() + 13 * 32 + random() * 50
+        self.topSpeed[i] = random() * 5 + 8
+        self.topChars[i] = [randLetter() for _ in range(randint(5, 13))]
+
         self.maxBottomLayers = 10
+        self.bottomX = np.zeros(self.maxBottomLayers)
+        self.bottomY = np.zeros(self.maxBottomLayers)
+        self.bottomSpeed = np.zeros(self.maxBottomLayers)
+        self.bottomChars = [[] for _ in range(self.maxBottomLayers)]
 
-    def getTopLayer(self):
-        chars = [randLetter() for _ in range(randint(5, 13))]
-
-        x = random() * self.width()
-        y = self.height() + 13 * 32 + random() * 50
-
-        return {"chars": chars, "x": x, "y": y, "speed": random() * 5 + 8}
-
-    def getBottomLayer(self):
-        chars = [randLetter() for _ in range(randint(5, 13))]
-
-        x = random() * self.width()
-        y = self.height() + 13 * 32 + random() * 50
-
-        return {"chars": chars, "x": x, "y": y, "speed": random() * 2 + 3}
+        self.bottomEnabled = 1
+        i = self.bottomEnabled - 1
+        self.bottomX[i] = random() * self.width()
+        self.bottomY[i] = self.height() + 13 * 32 + random() * 50
+        self.bottomSpeed[i] = random() * 2 + 3
+        self.bottomChars[i] = [randLetter() for _ in range(randint(5, 13))]
 
     def paintGL(self):
+        # Top layers
         gl.glBindTexture(gl.GL_TEXTURE_2D, self.topFont["textureId"])
 
-        nTopLayers = len(self.topLayers)
-        if nTopLayers < self.maxTopLayers:
-            addLayer = (self.maxTopLayers - nTopLayers) / self.maxTopLayers
+        if self.topEnabled < self.maxTopLayers:
+            addLayer = (self.maxTopLayers - self.topEnabled) / self.maxTopLayers
             if random() > 0.6 + addLayer * 0.4:
-                self.topLayers.append(self.getTopLayer())
+                self.topEnabled += 1
+                i = self.topEnabled - 1
+                self.topX[i] = random() * self.width()
+                self.topY[i] = self.height() + 13 * 32 + random() * 50
+                self.topSpeed[i] = random() * 5 + 8
+                self.topChars[i] = [randLetter() for _ in range(randint(5, 13))]
 
-        for n in range(len(self.topLayers)):
-            layer = self.topLayers[n]
+                print(self.topChars)
 
-            self.renderTopLayer(layer)
+        flipN = -1
+        if random() > 0.99:
+            flipN = randint(0, self.topEnabled)
 
-            if layer["y"] < 0:
-                self.topLayers[n] = self.getTopLayer()
+        for n in range(self.topEnabled):
+            self.renderTopLayer(n, flipChar=True if n == flipN else False)
 
+            if self.topY[n] < 0:
+                self.topChars[n] = [randLetter() for _ in range(randint(5, 13))]
+                self.topX[n] = random() * self.width()
+                self.topY[n] = self.height() + 13 * 32 + random() * 50
+                self.topSpeed[n] = random() * 5 + 8
+
+        self.topY -= self.topSpeed
+
+        # Bottom layers
         gl.glBindTexture(gl.GL_TEXTURE_2D, self.bottomFont["textureId"])
 
-        nBottomLayers = len(self.bottomLayers)
-        if nBottomLayers < self.maxBottomLayers:
-            addLayer = (self.maxBottomLayers - nBottomLayers) / self.maxBottomLayers
+        if self.bottomEnabled < self.maxBottomLayers:
+            addLayer = (self.maxBottomLayers - self.bottomEnabled) / self.maxBottomLayers
             if random() > 0.6 + addLayer * 0.4:
-                self.bottomLayers.append(self.getBottomLayer())
+                self.bottomEnabled += 1
+                i = self.bottomEnabled - 1
+                self.bottomX[i] = random() * self.width()
+                self.bottomY[i] = self.height() + 13 * 32 + random() * 50
+                self.bottomSpeed[i] = random() * 2 + 3
+                self.bottomChars[i] = [randLetter() for _ in range(randint(5, 13))]
 
-        for n in range(len(self.bottomLayers)):
-            layer = self.bottomLayers[n]
+        flipN = -1
+        if random() > 0.99:
+            flipN = randint(0, self.bottomEnabled)
 
-            self.renderBottomLayer(layer)
+        for n in range(self.bottomEnabled):
+            self.renderBottomLayer(n, flipChar=True if n == flipN else False)
 
-            if layer["y"] < 0:
-                self.bottomLayers[n] = self.getBottomLayer()
+            if self.bottomY[n] < 0:
+                self.bottomChars[n] = [randLetter() for _ in range(randint(5, 13))]
+                self.bottomX[n] = random() * self.width()
+                self.bottomY[n] = self.height() + 13 * 32 + random() * 50
+                self.bottomSpeed[n] = random() * 2 + 3
+
+        self.bottomY -= self.bottomSpeed
 
         self.update()
 
-    def renderTopLayer(self, layer):
+    def renderTopLayer(self, n, flipChar=False):
+        if self.topChars[n][0] == 0 and random() > 0.9:
+            self.topChars[n][0] = randLetter()
+        elif flipChar:
+            self.topChars[n][0] = 0 if random() > 0.1 else randLetter()
+
         gl.glPushMatrix()
-        gl.glTranslate(layer["x"], layer["y"], 0)
+        gl.glTranslate(self.topX[n], self.topY[n], 0)
         gl.glListBase(self.topFont["base"])
 
-        firstChars = layer["chars"][1:]
+        firstChars = self.topChars[n][1:]
         for i, char in enumerate(firstChars):
             n = len(firstChars) - i - 1
             gl.glColor(*topGreens[n])
@@ -115,28 +149,22 @@ class MatrixGl(QtWidgets.QOpenGLWidget):
         wobble = random() * 0.5
         brightGreen = (0.4 + wobble, 1, 0.4 + wobble, 1)
         gl.glColor(*brightGreen)
-        if layer["chars"][0] == 0 and random() > 0.7:
-            layer["chars"][0] = randLetter()
-        elif random() > 0.99:
-            layer["chars"][0] = 0 if random() > 0.1 else randLetter()
-
-        gl.glCallLists(layer["chars"][0])
+        gl.glCallLists(self.topChars[n][0])
         gl.glPopMatrix()
-        layer["y"] = layer["y"] - layer["speed"]
 
-    def renderBottomLayer(self, layer):
-        if layer["chars"][0] == 0 and random() > 0.75:
-            layer["chars"][0] = randLetter()
-        elif random() > 0.99:
-            layer["chars"][0] = 0 if random() > 0.1 else randLetter()
+    def renderBottomLayer(self, n, flipChar=False):
+        if self.bottomChars[n][0] == 0 and random() > 0.9:
+            self.bottomChars[n][0] = randLetter()
+        elif flipChar:
+            self.bottomChars[n][0] = 0 if random() > 0.1 else randLetter()
 
         for x in range(2):
             for y in range(2):
                 gl.glPushMatrix()
-                gl.glTranslate(layer["x"] + x * 2, layer["y"] + y * 2, 0)
+                gl.glTranslate(self.bottomX[n] + x * 2, self.bottomY[n] + y * 2, 0)
                 gl.glListBase(self.bottomFont["base"])
 
-                firstChars = layer["chars"][1:]
+                firstChars = self.bottomChars[n][1:]
                 for i, char in enumerate(firstChars):
                     n = len(firstChars) - i - 1
                     gl.glColor(*bottomGreens[n])
@@ -145,10 +173,8 @@ class MatrixGl(QtWidgets.QOpenGLWidget):
                 wobble = random() * 0.5
                 brightGreen = (0.4 + wobble, 1, 0.4 + wobble, 0.2)
                 gl.glColor(*brightGreen)
-                gl.glCallLists(layer["chars"][0])
+                gl.glCallLists(self.bottomChars[n][0])
                 gl.glPopMatrix()
-
-        layer["y"] = layer["y"] - layer["speed"]
 
     def initializeGL(self):
         gl.glTexEnvf(gl.GL_TEXTURE_ENV, gl.GL_TEXTURE_ENV_MODE, gl.GL_MODULATE)
@@ -203,15 +229,7 @@ class MatrixGl(QtWidgets.QOpenGLWidget):
         gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
         gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
         gl.glTexImage2D(
-            gl.GL_TEXTURE_2D,
-            0,
-            gl.GL_ALPHA,
-            Z.shape[1],
-            Z.shape[0],
-            0,
-            gl.GL_ALPHA,
-            gl.GL_UNSIGNED_BYTE,
-            Z,
+            gl.GL_TEXTURE_2D, 0, gl.GL_ALPHA, Z.shape[1], Z.shape[0], 0, gl.GL_ALPHA, gl.GL_UNSIGNED_BYTE, Z,
         )
 
         # Generate display lists

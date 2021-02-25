@@ -39,14 +39,12 @@ class MainText(QWidget):
         qp.setPen(mainPen)
 
         qp.drawText(
-            int(self.width() * 0.3),
-            int(self.height() * 0.5),
-            self.mainText,
+            int(self.width() * 0.3), int(self.height() * 0.5), self.mainText,
         )
 
     def anim(self):
         self.a = QPropertyAnimation(self, b"fontOpacity")
-        self.a.setDuration(20000)
+        self.a.setDuration(60000)
         self.a.setStartValue(255)
         self.a.setEndValue(0)
         self.a.start()
